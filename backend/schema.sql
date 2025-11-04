@@ -1,0 +1,36 @@
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Event statuses: BUSY, SWAPPABLE, SWAP_PENDING
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'BUSY',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Swap requests: PENDING, ACCEPTED, REJECTED
+CREATE TABLE IF NOT EXISTS swap_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  requester_id INTEGER NOT NULL,
+  responder_id INTEGER NOT NULL,
+  requester_event_id INTEGER NOT NULL,
+  responder_event_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (requester_id) REFERENCES users(id),
+  FOREIGN KEY (responder_id) REFERENCES users(id),
+  FOREIGN KEY (requester_event_id) REFERENCES events(id),
+  FOREIGN KEY (responder_event_id) REFERENCES events(id)
+);
