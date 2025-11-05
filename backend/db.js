@@ -1,22 +1,41 @@
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql2');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-const DB_FILE = process.env.DB_FILE || path.join(__dirname, 'slotswapper.db');
+// Create MySQL connection using .env credentials
+const db = mysql.createConnection({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'test',
+  port: process.env.DB_PORT || 3306,
+  multipleStatements: true, // allows running multiple SQL commands from schema.sql
+});
 
-const initializing = !fs.existsSync(DB_FILE);
-const db = new sqlite3.Database(DB_FILE);
+// Connect to MySQL
+db.connect((err) => {
+  if (err) {
+    console.error('❌ Failed to connect to MySQL:', err);
+    process.exit(1);
+  } else {
+    console.log('✅ Connected to MySQL database');
 
-if (initializing) {
-  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-  db.exec(schema, (err) => {
-    if (err) {
-      console.error('Failed to initialize DB schema:', err);
+    // Initialize schema if schema.sql file exists
+    const schemaPath = path.join(__dirname, 'schema.sql');
+    if (fs.existsSync(schemaPath)) {
+      const schema = fs.readFileSync(schemaPath, 'utf8');
+      db.query(schema, (err) => {
+        if (err) {
+          console.error('⚠️ Failed to initialize MySQL schema:', err);
+        } else {
+          console.log('✅ MySQL schema checked/initialized.');
+        }
+      });
     } else {
-      console.log('Database initialized.');
+      console.log('ℹ️ No schema.sql file found. Skipping initialization.');
     }
-  });
-}
+  }
+});
 
 module.exports = db;
